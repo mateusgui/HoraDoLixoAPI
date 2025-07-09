@@ -3,7 +3,7 @@ using HoraDoLixo.Model;
 using HoraDoLixo.ServiceInterface;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
-using Npgsql; // ALTERADO: Usando Npgsql em vez de SqlClient
+using Npgsql;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -27,12 +27,12 @@ namespace HoraDoLixo.Service
         public async Task<Usuario> CreateAsync(UsuarioCreateDto usuarioDto)
         {
             // 1. Verifica se o e-mail já existe no banco
-            using (var checkConnection = new NpgsqlConnection(_connectionString)) // ALTERADO
+            using (var checkConnection = new NpgsqlConnection(_connectionString))
             {
                 await checkConnection.OpenAsync();
-                var checkCommand = new NpgsqlCommand("SELECT COUNT(1) FROM \"Usuario\" WHERE email = @Email", checkConnection); // ALTERADO: Aspas duplas no nome da tabela
+                // CORRIGIDO: "usuario" em minúsculo
+                var checkCommand = new NpgsqlCommand("SELECT COUNT(1) FROM \"usuario\" WHERE email = @Email", checkConnection);
                 checkCommand.Parameters.AddWithValue("@Email", usuarioDto.Email);
-                // O cast para Int64 é mais seguro com Npgsql
                 if (Convert.ToInt64(await checkCommand.ExecuteScalarAsync()) > 0)
                 {
                     throw new InvalidOperationException("O e-mail informado já está em uso.");
@@ -61,15 +61,15 @@ namespace HoraDoLixo.Service
                 AlertaSeletivaAtivo = true
             };
 
-            using (var connection = new NpgsqlConnection(_connectionString)) // ALTERADO
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                // ALTERADO: Sintaxe do INSERT para PostgreSQL (sem [dbo] e com RETURNING)
-                var sql = @"INSERT INTO ""Usuario"" (nome_completo, email, senha_hash, telefone, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, cep, latitude, longitude, data_cadastro, status, alerta_comum_ativo, alerta_seletiva_ativo)
+                // CORRIGIDO: "usuario" em minúsculo
+                var sql = @"INSERT INTO ""usuario"" (nome_completo, email, senha_hash, telefone, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, cep, latitude, longitude, data_cadastro, status, alerta_comum_ativo, alerta_seletiva_ativo)
                             VALUES (@NomeCompleto, @Email, @SenhaHash, @Telefone, @EnderecoRua, @EnderecoNumero, @EnderecoComplemento, @EnderecoBairro, @Cep, @Latitude, @Longitude, @DataCadastro, @Status, @AlertaComumAtivo, @AlertaSeletivaAtivo)
                             RETURNING id_usuario;";
 
-                using (var command = new NpgsqlCommand(sql, connection)) // ALTERADO
+                using (var command = new NpgsqlCommand(sql, connection))
                 {
                     command.Parameters.AddWithValue("@NomeCompleto", novoUsuario.NomeCompleto);
                     command.Parameters.AddWithValue("@Email", novoUsuario.Email);
@@ -119,15 +119,15 @@ namespace HoraDoLixo.Service
             }
 
             var setClauses = new List<string>();
-            var parameters = new List<NpgsqlParameter>(); // ALTERADO
+            var parameters = new List<NpgsqlParameter>();
 
             Action<string, object> addClause = (columnName, value) =>
             {
                 if (value != null)
                 {
                     var paramName = $"@{columnName}";
-                    setClauses.Add($"\"{columnName}\" = {paramName}"); // ALTERADO: Aspas duplas nas colunas
-                    parameters.Add(new NpgsqlParameter(paramName, value)); // ALTERADO
+                    setClauses.Add($"\"{columnName}\" = {paramName}");
+                    parameters.Add(new NpgsqlParameter(paramName, value));
                 }
             };
 
@@ -153,12 +153,13 @@ namespace HoraDoLixo.Service
                 return true;
             }
 
-            var sql = $"UPDATE \"Usuario\" SET {string.Join(", ", setClauses)} WHERE id_usuario = @IdUsuario"; // ALTERADO
+            // CORRIGIDO: "usuario" em minúsculo
+            var sql = $"UPDATE \"usuario\" SET {string.Join(", ", setClauses)} WHERE id_usuario = @IdUsuario";
 
-            using (var connection = new NpgsqlConnection(_connectionString)) // ALTERADO
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                using (var command = new NpgsqlCommand(sql, connection)) // ALTERADO
+                using (var command = new NpgsqlCommand(sql, connection))
                 {
                     command.Parameters.AddRange(parameters.ToArray());
                     command.Parameters.AddWithValue("@IdUsuario", id);
@@ -183,10 +184,11 @@ namespace HoraDoLixo.Service
         public IEnumerable<Usuario> GetAll()
         {
             var usuarios = new List<Usuario>();
-            using (var connection = new NpgsqlConnection(_connectionString)) // ALTERADO
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                var command = new NpgsqlCommand("SELECT * FROM \"Usuario\"", connection); // ALTERADO
+                // CORRIGIDO: "usuario" em minúsculo
+                var command = new NpgsqlCommand("SELECT * FROM \"usuario\"", connection);
                 using (var reader = command.ExecuteReader())
                 {
                     while (reader.Read())
@@ -200,10 +202,11 @@ namespace HoraDoLixo.Service
 
         public Usuario? GetById(int id)
         {
-            using (var connection = new NpgsqlConnection(_connectionString)) // ALTERADO
+            using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                var command = new NpgsqlCommand("SELECT * FROM \"Usuario\" WHERE id_usuario = @IdUsuario", connection); // ALTERADO
+                // CORRIGIDO: "usuario" em minúsculo
+                var command = new NpgsqlCommand("SELECT * FROM \"usuario\" WHERE id_usuario = @IdUsuario", connection);
                 command.Parameters.AddWithValue("@IdUsuario", id);
                 using (var reader = command.ExecuteReader())
                 {
@@ -218,9 +221,10 @@ namespace HoraDoLixo.Service
 
         private async Task<Usuario?> GetByEmailAsync(string email)
         {
-            using var connection = new NpgsqlConnection(_connectionString); // ALTERADO
+            using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
-            using var command = new NpgsqlCommand("SELECT * FROM \"Usuario\" WHERE email = @Email", connection); // ALTERADO
+            // CORRIGIDO: "usuario" em minúsculo
+            using var command = new NpgsqlCommand("SELECT * FROM \"usuario\" WHERE email = @Email", connection);
             command.Parameters.AddWithValue("@Email", email);
             using var reader = await command.ExecuteReaderAsync();
             if (await reader.ReadAsync())
@@ -236,8 +240,6 @@ namespace HoraDoLixo.Service
                 return null;
             }
 
-            // O método GetZonaInfoByCoordsAsync foi temporariamente desativado
-            // e precisa ser reescrito para usar PostGIS.
             var informacoes = new InformacoesColetaDto
             {
                 ColetaComum = await GetZonaInfoByCoordsAsync("Comum", usuario.Latitude.Value, usuario.Longitude.Value),
@@ -250,63 +252,8 @@ namespace HoraDoLixo.Service
         {
             // TODO: A query original era específica do SQL Server e precisa ser reescrita
             // para usar as funções espaciais do PostGIS (extensão do PostgreSQL).
-            // Ex: ST_MakePoint, ST_SetSRID, ST_Contains.
-            // Para não bloquear o deploy, este método está retornando nulo temporariamente.
-            // A implementação original foi comentada abaixo para referência.
-
-            await Task.CompletedTask; // Operação assíncrona vazia para evitar avisos do compilador
+            await Task.CompletedTask;
             return null;
-
-            /*
-            CÓDIGO ORIGINAL (INCOMPATÍVEL) PARA REFERÊNCIA:
-
-            var pontoUsuario = $"POINT({longitude.ToString(CultureInfo.InvariantCulture)} {latitude.ToString(CultureInfo.InvariantCulture)})";
-            var sql = $@"
-                    DECLARE @pontoUsuario GEOGRAPHY = geography::STPointFromText('{pontoUsuario}', 4326);
-                    DECLARE @ZonaId INT;
-
-                    SELECT TOP 1 @ZonaId = id_zona_coleta_{tipo.ToLower()}
-                    FROM dbo.ZonaColeta{tipo}
-                    WHERE AreaGeografica IS NOT NULL AND AreaGeografica.STContains(@pontoUsuario) = 1;
-
-                    IF @ZonaId IS NOT NULL
-                    BEGIN
-                        SELECT 
-                            z.id_zona_coleta_{tipo.ToLower()} AS ZonaId, z.nome_zona AS NomeZona,
-                            p.dia_semana AS DiaSemana, p.horario_inicio_previsto AS Horario, p.observacoes AS Observacoes
-                        FROM dbo.ZonaColeta{tipo} z
-                        JOIN dbo.ProgramacaoColeta{tipo} p ON z.id_zona_coleta_{tipo.ToLower()} = p.id_zona_coleta_{tipo.ToLower()}
-                        WHERE z.id_zona_coleta_{tipo.ToLower()} = @ZonaId;
-                    END";
-
-            ZonaColetaInfoDto? zonaInfo = null;
-            using (var connection = new NpgsqlConnection(_connectionString))
-            {
-                await connection.OpenAsync();
-                using (var command = new NpgsqlCommand(sql, connection))
-                using (var reader = await command.ExecuteReaderAsync())
-                {
-                    while (await reader.ReadAsync())
-                    {
-                        if (zonaInfo == null)
-                        {
-                            zonaInfo = new ZonaColetaInfoDto
-                            {
-                                Id = (int)reader["ZonaId"],
-                                Nome = reader["NomeZona"].ToString() ?? "N/A"
-                            };
-                        }
-                        zonaInfo.Programacao.Add(new ProgramacaoDto
-                        {
-                            DiaSemana = (int)reader["DiaSemana"],
-                            HorarioInicioPrevisto = (TimeSpan)reader["Horario"],
-                            Observacoes = reader["Observacoes"]?.ToString()
-                        });
-                    }
-                }
-            }
-            return zonaInfo;
-            */
         }
 
         private string GenerateJwtToken(Usuario usuario)
@@ -331,7 +278,6 @@ namespace HoraDoLixo.Service
             return tokenHandler.WriteToken(token);
         }
 
-        // ALTERADO: O tipo do parâmetro agora é NpgsqlDataReader
         private Usuario MapToUsuario(NpgsqlDataReader reader)
         {
             return new Usuario
