@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://hora-do-lixo.vercel.app/")
+        policy.WithOrigins("http://localhost:3000", "https://hora-do-lixo.vercel.app")
               .AllowAnyHeader() // Permite qualquer cabeçalho
               .AllowAnyMethod(); // Permite qualquer método
     });
