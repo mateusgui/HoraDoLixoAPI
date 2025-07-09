@@ -4,19 +4,22 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi.Models;
-
+using Microsoft.EntityFrameworkCore;
+using HoraDoLixo.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// cors
+
+builder.Services.AddDbContext<HoraDoLixoDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        // Define quais "origens" (sites) podem acessar sua API
-        policy.WithOrigins("http://localhost:3000", "https://hora-do-lixo.vercel.app")
-              .AllowAnyHeader() // Permite qualquer cabeçalho na requisição
-              .AllowAnyMethod(); // Permite qualquer método (GET, POST, PUT, etc.)
+        policy.WithOrigins("http://localhost:3000", "https://hora-do-lixo.vercel.app/")
+              .AllowAnyHeader() // Permite qualquer cabeçalho
+              .AllowAnyMethod(); // Permite qualquer método
     });
 });// cors
 

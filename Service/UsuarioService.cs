@@ -26,11 +26,11 @@ namespace HoraDoLixo.Service
 
         public async Task<Usuario> CreateAsync(UsuarioCreateDto usuarioDto)
         {
-            // 1. Verifica se o e-mail já existe no banco
+
             using (var checkConnection = new NpgsqlConnection(_connectionString))
             {
                 await checkConnection.OpenAsync();
-                // CORRIGIDO: "usuario" em minúsculo
+
                 var checkCommand = new NpgsqlCommand("SELECT COUNT(1) FROM \"usuario\" WHERE email = @Email", checkConnection);
                 checkCommand.Parameters.AddWithValue("@Email", usuarioDto.Email);
                 if (Convert.ToInt64(await checkCommand.ExecuteScalarAsync()) > 0)
@@ -64,7 +64,7 @@ namespace HoraDoLixo.Service
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 await connection.OpenAsync();
-                // CORRIGIDO: "usuario" em minúsculo
+
                 var sql = @"INSERT INTO ""usuario"" (nome_completo, email, senha_hash, telefone, endereco_rua, endereco_numero, endereco_complemento, endereco_bairro, cep, latitude, longitude, data_cadastro, status, alerta_comum_ativo, alerta_seletiva_ativo)
                             VALUES (@NomeCompleto, @Email, @SenhaHash, @Telefone, @EnderecoRua, @EnderecoNumero, @EnderecoComplemento, @EnderecoBairro, @Cep, @Latitude, @Longitude, @DataCadastro, @Status, @AlertaComumAtivo, @AlertaSeletivaAtivo)
                             RETURNING id_usuario;";
@@ -153,7 +153,6 @@ namespace HoraDoLixo.Service
                 return true;
             }
 
-            // CORRIGIDO: "usuario" em minúsculo
             var sql = $"UPDATE \"usuario\" SET {string.Join(", ", setClauses)} WHERE id_usuario = @IdUsuario";
 
             using (var connection = new NpgsqlConnection(_connectionString))
@@ -187,7 +186,6 @@ namespace HoraDoLixo.Service
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                // CORRIGIDO: "usuario" em minúsculo
                 var command = new NpgsqlCommand("SELECT * FROM \"usuario\"", connection);
                 using (var reader = command.ExecuteReader())
                 {
@@ -205,7 +203,6 @@ namespace HoraDoLixo.Service
             using (var connection = new NpgsqlConnection(_connectionString))
             {
                 connection.Open();
-                // CORRIGIDO: "usuario" em minúsculo
                 var command = new NpgsqlCommand("SELECT * FROM \"usuario\" WHERE id_usuario = @IdUsuario", connection);
                 command.Parameters.AddWithValue("@IdUsuario", id);
                 using (var reader = command.ExecuteReader())
@@ -223,7 +220,6 @@ namespace HoraDoLixo.Service
         {
             using var connection = new NpgsqlConnection(_connectionString);
             await connection.OpenAsync();
-            // CORRIGIDO: "usuario" em minúsculo
             using var command = new NpgsqlCommand("SELECT * FROM \"usuario\" WHERE email = @Email", connection);
             command.Parameters.AddWithValue("@Email", email);
             using var reader = await command.ExecuteReaderAsync();
@@ -251,7 +247,7 @@ namespace HoraDoLixo.Service
         private async Task<ZonaColetaInfoDto?> GetZonaInfoByCoordsAsync(string tipo, decimal latitude, decimal longitude)
         {
             // TODO: A query original era específica do SQL Server e precisa ser reescrita
-            // para usar as funções espaciais do PostGIS (extensão do PostgreSQL).
+
             await Task.CompletedTask;
             return null;
         }
